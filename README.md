@@ -100,30 +100,33 @@ Open **http://127.0.0.1:8000** in your browser.
 ---
 
 ## 🗂️ Project Structure
+
+```
 ScreenCraft/
 ├── app/
-│ ├── main.py # FastAPI entrypoint, page routes
-│ ├── config.py # Settings (.env loader)
-│ ├── database/
-│ │ └── db.py # Async SQLAlchemy engine, table creation
-│ ├── models/ # SQLAlchemy ORM models (shows, movies, episodes, user_content...)
-│ ├── schemas/ # Pydantic request/response models
-│ ├── services/
-│ │ ├── tmdb.py # TMDB API client
-│ │ ├── tvmaze.py # TVmaze API client
-│ │ ├── matching.py # Fuzzy title identification (never guesses)
-│ │ ├── library.py # Show/movie creation, episode sync
-│ │ ├── dashboard.py # Watching progress, Today, Next Episodes
-│ │ ├── discovery.py # New TV shows / movies / seasons discovery
-│ │ ├── calendar.py # Monthly calendar event aggregation
-│ │ └── recommendations.py # Vladimir Score recommendation engine
-│ ├── api/ # FastAPI routers (one per feature area)
-│ ├── templates/ # Jinja2 HTML templates
-│ └── static/ # CSS + vanilla JS
-├── tests/ # pytest test suite
+│   ├── main.py              # FastAPI entrypoint, page routes
+│   ├── config.py            # Settings (.env loader)
+│   ├── database/
+│   │   └── db.py            # Async SQLAlchemy engine, table creation
+│   ├── models/               # SQLAlchemy ORM models (shows, movies, episodes, user_content...)
+│   ├── schemas/               # Pydantic request/response models
+│   ├── services/
+│   │   ├── tmdb.py           # TMDB API client
+│   │   ├── tvmaze.py         # TVmaze API client
+│   │   ├── matching.py       # Fuzzy title identification (never guesses)
+│   │   ├── library.py        # Show/movie creation, episode sync
+│   │   ├── dashboard.py      # Watching progress, Today, Next Episodes
+│   │   ├── discovery.py      # New TV shows / movies / seasons discovery
+│   │   ├── calendar.py       # Monthly calendar event aggregation
+│   │   └── recommendations.py # Vladimir Score recommendation engine
+│   ├── api/                  # FastAPI routers (one per feature area)
+│   ├── templates/             # Jinja2 HTML templates
+│   └── static/                # CSS + vanilla JS
+├── tests/                    # pytest test suite
 ├── requirements.txt
-├── .env.example # Copy to .env and add your own TMDB key
-└── .gitignore # Excludes .env and local database
+├── .env.example               # Copy to .env and add your own TMDB key
+└── .gitignore                 # Excludes .env and local database
+```
 
 ---
 
