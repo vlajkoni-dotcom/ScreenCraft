@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block content %}
+    <h1>Search</h1>
+    <form id="search-form">
+        <input type="text" id="query" name="q" placeholder="Search shows and movies..." autocomplete="off" required>
+        <button type="submit">Search</button>
+    </form>
+    <div class="tabs" id="type-tabs">
+        <button type="button" class="tab active" data-type="all">All</button>
+        <button type="button" class="tab" data-type="show">TV Shows</button>
+        <button type="button" class="tab" data-type="movie">Movies</button>
+    </div>
+    <div id="results" class="card-grid"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const form = document.getElementById('search-form');
+const resultsEl = document.getElementById('results');
+let lastResults = [];
+let activeFilter = 'all';
+
+document.querySelectorAll('#type-tabs .tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#type-tabs .tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.type;
+        renderResults();
+    });
+});
+
+async function setStatus(contentType, tmdbId, status, btn) {
+    btn.disabled = true;
+    const path = contentType === 'show' ? `/api/shows/${tmdbId}/status` : `/api/movies/${tmdbId}/status`;
+    const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+    });
+    if (res.ok) {
+        btn.closest('.card').querySelector('.status').textContent = 'Status: ' + status;
+    }
+    btn.disabled = false;
+}
+
+function renderResults() {
+    const filtered = activeFilter === 'all' ? lastResults : lastResults.filter(r => r.content_type === activeFilter);
+    if (!filtered.length) {
+        resultsEl.innerHTML = '<p class="hint">No results.</p>';
+        return;
+    }
+    resultsEl.innerHTML = filtered.map(r => `
+        <div class="card">
+            <img src="${r.poster_path ? 'https://image.tmdb.org/t/p/w154' + r.poster_path : ''}" alt="">
+            <div class="card-body">
+                <span class="badge">${r.content_type === 'show' ? 'TV SHOW' : 'MOVIE'}</span>
+                <h3>${r.content_type === 'show' ? `<a href="/shows/${r.tmdb_id}">${r.title}</a>` : r.title} ${r.year ? `(${r.year})` : ''}</h3>
+                <p>${r.overview ? r.overview.slice(0, 160) + '...' : 'No description.'}</p>
+                <p class="status">${r.already_in_library ? 'Status: ' + r.current_status : ''}</p>
+                <div class="btn-row">
+                    <button onclick="setStatus('${r.content_type}', ${r.tmdb_id}, 'watching', this)">Watching</button>
+                    <button onclick="setStatus('${r.content_type}', ${r.tmdb_id}, 'watchlist', this)">Watchlist</button>
+                    <button onclick="setStatus('${r.content_type}', ${r.tmdb_id}, 'watched', this)">Watched</button>
+                    <button onclick="setStatus('${r.content_type}', ${r.tmdb_id}, 'not_interested', this)">Not interested</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = document.getElementById('query').value.trim();
+    if (!q) return;
+
+    resultsEl.innerHTML = '<p class="hint">Searching...</p>';
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    lastResults = data.results;
+    renderResults();
+});
+</script>
+{% endblock %}

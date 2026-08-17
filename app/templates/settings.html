@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+    <h1>Settings</h1>
+    <div id="settings-box" class="settings-box"><p class="hint">Loading...</p></div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function load() {
+    const res = await fetch('/api/settings');
+    const s = await res.json();
+    document.getElementById('settings-box').innerHTML = `
+        <div class="settings-row">
+            <label>TMDB API key</label>
+            <p>${s.tmdb_api_key_configured ? '✅ configured (via .env file)' : '⚠️ not set — add TMDB_API_KEY to your .env file'}</p>
+        </div>
+        <div class="settings-row">
+            <label for="region">Region</label>
+            <input type="text" id="region" value="${s.region}" maxlength="2">
+        </div>
+        <div class="settings-row">
+            <label for="timezone">Timezone</label>
+            <input type="text" id="timezone" value="${s.timezone}">
+        </div>
+        <button onclick="save()">Save</button>
+        <p class="hint" id="save-msg"></p>
+    `;
+}
+
+async function save() {
+    const region = document.getElementById('region').value.trim();
+    const timezone = document.getElementById('timezone').value.trim();
+    await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ region, timezone })
+    });
+    document.getElementById('save-msg').textContent = 'Saved.';
+}
+
+load();
+</script>
+{% endblock %}

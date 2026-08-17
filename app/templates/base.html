@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TV Show Tracker{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/app.js"></script>
+</head>
+<body>
+    <div class="layout">
+        <nav class="sidebar">
+            <div class="logo">🎬 Tracker</div>
+            <a href="/" class="{{ 'active' if active == 'dashboard' else '' }}">Dashboard</a>
+            <a href="/today" class="{{ 'active' if active == 'today' else '' }}">Today</a>
+            <a href="/calendar" class="{{ 'active' if active == 'calendar' else '' }}">Calendar</a>
+            <a href="/watching" class="{{ 'active' if active == 'watching' else '' }}">Watching</a>
+            <a href="/new-series" class="{{ 'active' if active == 'new-series' else '' }}">New TV Shows &amp; Movies</a>
+            <a href="/watchlist" class="{{ 'active' if active == 'watchlist' else '' }}">Watchlist</a>
+            <a href="/watched" class="{{ 'active' if active == 'watched' else '' }}">Watched</a>
+            <a href="/search-page" class="{{ 'active' if active == 'search' else '' }}">Search</a>
+            <a href="/settings" class="{{ 'active' if active == 'settings' else '' }}">Settings</a>
+        </nav>
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+    <h1>Dashboard</h1>
+
+    <section>
+        <h2>Next Episodes</h2>
+        <div id="next-episodes" class="row-list"><p class="hint">Loading...</p></div>
+    </section>
+
+    <section>
+        <h2>Today</h2>
+        <div id="today-only" class="row-list"><p class="hint">Loading...</p></div>
+    </section>
+
+    <section>
+        <h2>Next 3 Days</h2>
+        <div id="today-preview" class="row-list"><p class="hint">Loading...</p></div>
+    </section>
+
+    <section>
+        <h2>New TV Shows</h2>
+        <p class="hint">Newly started or upcoming TV shows. <a href="/new-series">See all →</a></p>
+        <div id="new-series-preview" class="row-list"><p class="hint">Loading...</p></div>
+    </section>
+
+    <section>
+        <h2>Recommended For You</h2>
+        <p class="hint">Based on shows you're watching — similarity, genre match, rating, popularity, newness, and availability in Serbia.</p>
+        <div id="recommendations" class="row-list"><p class="hint">Loading...</p></div>
+    </section>
+{% endblock %}
+{% block scripts %}
+<script>
+async function setShowStatus(tmdbId, status, btn) {
+    btn.disabled = true;
+    await fetch(`/api/shows/${tmdbId}/status`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+    });
+    btn.textContent = 'Added: ' + status;
+}
+
+async function loadNewSeriesPreview() {
+    const el = document.getElementById('new-series-preview');
+    const res = await fetch('/api/discovery/new-series?window=next_30');
+    if (!res.ok) { el.innerHTML = '<p class="hint">Could not reach TMDB right now.</p>'; return; }
+    const data = await res.json();
+    if (!data.length) { el.innerHTML = '<p class="hint">Nothing new in the next 30 days.</p>'; return; }
+    el.innerHTML = data.slice(0, 5).map(s => `
+        <div class="row-card">
+            <img src="${s.poster_path ? 'https://image.tmdb.org/t/p/w92' + s.poster_path : ''}" alt="">
+            <div>
+                <strong><a href="/shows/${s.tmdb_id}" style="color:inherit">${s.title}</a></strong>
+                <p class="hint">${s.first_air_date ? formatDate(s.first_air_date) : 'TBA'}</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadRecommendations() {
+    const el = document.getElementById('recommendations');
+    const res = await fetch('/api/recommendations?limit=6');
+    if (!res.ok) { el.innerHTML = '<p class="hint">Could not reach TMDB right now.</p>'; return; }
+    const data = await res.json();
+    if (!data.length) {
+        el.innerHTML = '<p class="hint">Add a few shows to Watching or Watched first — recommendations need at least one show to work from.</p>';
+        return;
+    }
+    el.innerHTML = data.map(r => `
+        <div class="row-card">
+            <img src="${r.poster_path ? 'https://image.tmdb.org/t/p/w92' + r.poster_path : ''}" alt="">
+            <div style="flex:1">
+                <strong><a href="/shows/${r.tmdb_id}" style="color:inherit">${r.title}</a></strong> ${r.year ? `(${r.year})` : ''}
+                <span class="badge score-badge">Vladimir Score: ${r.vladimir_score}/100</span>
+                <p class="hint">${r.available_in_serbia ? '✅ Available in Serbia' : '⚠️ Not confirmed in Serbia'}</p>
+                <button class="rec-add-btn" onclick="setShowStatus(${r.tmdb_id}, 'watchlist', this)">Add to Watchlist</button>
+            </div>
+        </div>
+    `).join('');
+}
+async function loadNextEpisodes() {
+    const res = await fetch('/api/library/next-episodes');
+    const data = await res.json();
+    const el = document.getElementById('next-episodes');
+    if (!data.length) { el.innerHTML = '<p class="hint">Nothing upcoming for shows you\'re watching.</p>'; return; }
+    el.innerHTML = data.map(s => `
+        <div class="row-card">
+            <img src="${s.poster_path ? 'https://image.tmdb.org/t/p/w92' + s.poster_path : ''}" alt="">
+            <div>
+                <strong>${s.title}</strong>
+                <p>${s.next_episode.code}${s.next_episode.title ? ' — ' + s.next_episode.title : ''}</p>
+                <p class="hint">${formatDate(s.next_episode.air_date)}</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadToday() {
+    const res = await fetch('/api/library/today');
+    const data = await res.json();
+
+    const todayOnly = data.filter(e => e.day_label === 'Today');
+    const todayOnlyEl = document.getElementById('today-only');
+    todayOnlyEl.innerHTML = todayOnly.length ? todayOnly.map(e => `
+        <div class="row-card">
+            <img src="${e.poster_path ? 'https://image.tmdb.org/t/p/w92' + e.poster_path : ''}" alt="">
+            <div>
+                <strong>${e.title}</strong>
+                <p>${e.code}${e.episode_title ? ' — ' + e.episode_title : ''}</p>
+                <p class="hint">${e.air_time || ''}</p>
+            </div>
+        </div>
+    `).join('') : '<p class="hint">Nothing airing today.</p>';
+
+    const el = document.getElementById('today-preview');
+    if (!data.length) { el.innerHTML = '<p class="hint">Nothing airing in the next 3 days.</p>'; return; }
+    el.innerHTML = data.slice(0, 8).map(e => `
+        <div class="row-card">
+            <img src="${e.poster_path ? 'https://image.tmdb.org/t/p/w92' + e.poster_path : ''}" alt="">
+            <div>
+                <strong>${e.title}</strong>
+                <p>${e.code}${e.episode_title ? ' — ' + e.episode_title : ''}</p>
+                <p class="hint">${e.day_label}${e.air_time ? ' · ' + e.air_time : ''} (${formatDate(e.air_date)})</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+loadNextEpisodes();
+loadToday();
+loadNewSeriesPreview();
+loadRecommendations();
+</script>
+{% endblock %}

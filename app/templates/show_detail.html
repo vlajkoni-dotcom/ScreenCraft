@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Show{% endblock %}
+{% block content %}
+    <div id="show-header"><p class="hint">Loading...</p></div>
+    <div id="seasons"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const tmdbId = {{ tmdb_id }};
+
+async function resyncEpisodes(btn) {
+    btn.disabled = true;
+    btn.textContent = 'Syncing...';
+    await fetch(`/api/shows/${tmdbId}/resync`, { method: 'POST' });
+    btn.textContent = 'Refresh episodes';
+    btn.disabled = false;
+    load();
+}
+
+async function markSeasonWatched(seasonId, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    await fetch(`/api/library/seasons/${seasonId}/watched`, { method: 'POST' });
+    load();
+}
+
+async function toggleEpisode(episodeId, checked, row) {
+    const method = checked ? 'POST' : 'DELETE';
+    row.style.opacity = '0.5';
+    await fetch(`/api/library/episodes/${episodeId}/watched`, { method });
+    row.style.opacity = '1';
+    row.classList.toggle('watched', checked);
+}
+
+function renderNextAirBadge(ep) {
+    if (!ep.air_date) return '';
+    const todayIso = new Date().toISOString().slice(0, 10);
+    if (ep.air_date > todayIso) return `<span class="badge upcoming">airs ${formatDate(ep.air_date)}</span>`;
+    return '';
+}
+
+async function load() {
+    const res = await fetch(`/api/shows/${tmdbId}`);
+    if (!res.ok) {
+        document.getElementById('show-header').innerHTML = '<p class="hint">Could not load this show.</p>';
+        return;
+    }
+    const show = await res.json();
+
+    document.getElementById('show-header').innerHTML = `
+        <div class="show-header">
+            <img src="${show.poster_path ? 'https://image.tmdb.org/t/p/w185' + show.poster_path : ''}" alt="">
+            <div>
+                <h1>${show.title}</h1>
+                <p class="hint">${show.genres.join(', ')} · ${show.airing_status}</p>
+                <p>${show.overview || ''}</p>
+                ${show.user_status ? `<span class="badge">${show.user_status.toUpperCase()}</span>` : ''}
+                ${show.providers.length ? '<p class="hint">Where to watch (RS): ' + [...new Set(show.providers.map(p => p.name))].join(', ') + '</p>' : '<p class="hint">Not confirmed available in Serbia.</p>'}
+            </div>
+        </div>
+    `;
+
+    const seasonsEl = document.getElementById('seasons');
+    seasonsEl.innerHTML = `
+        <div style="margin-bottom:1rem"><button onclick="resyncEpisodes(this)">Refresh episodes</button>
+        <span class="hint">Use this if episodes look outdated or missing.</span></div>
+    ` + (show.seasons.map(season => `
+        <details class="season-block" ${season.season_number === show.seasons[show.seasons.length-1].season_number ? 'open' : ''}>
+            <summary>
+                <span>Season ${season.season_number} (${season.episodes.length} episodes) ${season.fully_watched ? '<span class="badge watched-badge">✓ Watched</span>' : ''}</span>
+                <button class="mark-season-btn" onclick="event.preventDefault(); markSeasonWatched(${season.id}, this)">Mark whole season as watched</button>
+            </summary>
+            <table class="table">
+                <tbody>
+                    ${season.episodes.map(ep => `
+                        <tr class="episode-row ${ep.watched ? 'watched' : ''}">
+                            <td style="width:2rem">
+                                <input type="checkbox" ${ep.watched ? 'checked' : ''}
+                                    onchange="toggleEpisode(${ep.id}, this.checked, this.closest('tr'))">
+                            </td>
+                            <td style="width:5rem">S${String(season.season_number).padStart(2,'0')}E${String(ep.episode_number).padStart(2,'0')}</td>
+                            <td>${ep.title || '(untitled)'}</td>
+                            <td class="hint">${formatDate(ep.air_date)} ${renderNextAirBadge(ep)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </details>
+    `)).join('') || '<p class="hint">No episode data yet.</p>';
+}
+
+load();
+</script>
+{% endblock %}

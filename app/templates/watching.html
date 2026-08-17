@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Watching{% endblock %}
+{% block content %}
+    <h1>Watching</h1>
+    <div id="watching-list" class="grid"><p class="hint">Loading...</p></div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function load() {
+    const res = await fetch('/api/library/watching');
+    const data = await res.json();
+    const el = document.getElementById('watching-list');
+    if (!data.length) {
+        el.innerHTML = '<p class="hint">No shows in Watching yet. Add some from Search.</p>';
+        return;
+    }
+    el.innerHTML = data.map(s => `
+        <div class="poster-card" onclick="goTo('/shows/${s.tmdb_id}')">
+            <img src="${s.poster_path ? 'https://image.tmdb.org/t/p/w185' + s.poster_path : ''}" alt="">
+            <div class="poster-card-body">
+                <h3>${s.title}</h3>
+                <p class="hint">Season ${s.current_season ?? '—'}</p>
+                <p><strong>${s.watched_count}/${s.total_count}</strong> episodes watched</p>
+                <p>Last watched: ${s.last_watched || '—'}</p>
+                <p>Next: ${s.next_episode ? s.next_episode.code : '—'}</p>
+                <p class="hint">${s.next_episode && s.next_episode.air_date ? 'Air date: ' + formatDate(s.next_episode.air_date) : ''}</p>
+            </div>
+        </div>
+    `).join('');
+}
+load();
+</script>
+{% endblock %}

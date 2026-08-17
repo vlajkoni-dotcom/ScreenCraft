@@ -1,0 +1,344 @@
+:root {
+    --bg: #0f1115;
+    --surface: #1a1d24;
+    --border: #2a2e38;
+    --text: #e8e9ec;
+    --text-dim: #9aa0ab;
+    --accent: #6c5ce7;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 2rem;
+}
+
+header h1 { margin-bottom: 0.25rem; }
+.hint { color: var(--text-dim); font-size: 0.9rem; }
+
+#search-form {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1.5rem 0;
+    max-width: 600px;
+}
+
+input[type="text"] {
+    flex: 1;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1rem;
+}
+
+button {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+#results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.75rem;
+}
+
+.card img {
+    width: 70px;
+    border-radius: 6px;
+    height: fit-content;
+}
+
+.card h3 { margin: 0.2rem 0; font-size: 1rem; }
+.card p { color: var(--text-dim); font-size: 0.85rem; margin: 0.2rem 0; }
+
+.badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    background: var(--accent);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.status { color: #6cf07e !important; }
+
+/* --- Layout / navigation --- */
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 200px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.sidebar .logo {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.sidebar a {
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 0.5rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.sidebar a:hover { background: var(--border); color: var(--text); }
+.sidebar a.active { background: var(--accent); color: white; }
+
+.content {
+    flex: 1;
+    padding: 2rem;
+    min-width: 0;
+}
+
+.content h1 { margin-top: 0; }
+.content section { margin-bottom: 2rem; }
+.content section h2 { font-size: 1.1rem; color: var(--text-dim); margin-bottom: 0.5rem; }
+
+/* --- Grid of poster cards (Watching/Watchlist/Watched) --- */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* Šira verzija grida za kartice sa opisom (Search, Discover New Series/Movies) -
+   .grid je namerno uska (za postere), ova je za .card sadržaj koji ima duži tekst. */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.poster-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    cursor: pointer;
+}
+
+.poster-card:hover { border-color: var(--accent); }
+.poster-card, .poster-card * { text-decoration: none !important; }
+.poster-card img { width: 100%; display: block; background: var(--border); min-height: 120px; }
+.poster-card-body { padding: 0.75rem; }
+.poster-card-body h3 { margin: 0.2rem 0; font-size: 0.95rem; color: var(--text); }
+.poster-card-body p { margin: 0.15rem 0; font-size: 0.8rem; color: var(--text-dim); }
+.poster-card-body button {
+    margin-top: 0.5rem;
+    width: 100%;
+    font-size: 0.8rem;
+    padding: 0.4rem;
+}
+
+/* --- Row list (Dashboard sections) --- */
+.row-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.row-card {
+    display: flex;
+    gap: 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    align-items: center;
+}
+.row-card img { width: 46px; border-radius: 4px; }
+.row-card p { margin: 0.1rem 0; font-size: 0.8rem; color: var(--text-dim); }
+
+/* --- Table (Today) --- */
+.table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.table th, .table td {
+    text-align: left;
+    padding: 0.6rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+}
+.table th { color: var(--text-dim); font-weight: 500; }
+
+/* --- Search page buttons --- */
+.btn-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
+.btn-row button {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.6rem;
+    background: var(--border);
+    color: var(--text);
+}
+.btn-row button:hover { background: var(--accent); color: white; }
+
+/* --- Settings --- */
+.settings-box { max-width: 420px; margin-top: 1rem; }
+.settings-row { margin-bottom: 1rem; }
+.settings-row label { display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.3rem; }
+.settings-row input {
+    width: 100%;
+    padding: 0.5rem 0.7rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* --- Search filter tabs --- */
+.tabs { display: flex; gap: 0.5rem; margin: 0.75rem 0 1rem; }
+.tab {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 0.35rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+.card h3 a { color: var(--text); text-decoration: none; }
+.card h3 a:hover { text-decoration: underline; }
+
+/* --- Show detail page --- */
+.show-header { display: flex; gap: 1.25rem; margin-bottom: 1.5rem; }
+.show-header img { width: 140px; border-radius: 10px; }
+.show-header h1 { margin: 0 0 0.3rem; }
+.show-header .badge.upcoming { background: #2b8a3e; }
+
+.season-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+}
+.season-block summary {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.mark-season-btn {
+    font-size: 0.75rem;
+    font-weight: 400;
+    padding: 0.3rem 0.6rem;
+    background: var(--border);
+    color: var(--text);
+}
+.mark-season-btn:hover { background: var(--accent); color: white; }
+.watched-badge { background: #2b8a3e; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 0.5rem; }
+.season-block .table { margin-top: 0; }
+.season-block td { border-bottom: 1px solid var(--border); }
+.episode-row.watched td { color: var(--text-dim); }
+.episode-row.watched td:nth-child(3) { text-decoration: line-through; }
+.badge.upcoming { background: #2b8a3e; margin-left: 0.5rem; font-size: 0.7rem; }
+
+/* --- Discovery filters --- */
+.filters-bar { display: flex; gap: 0.5rem; margin: 1rem 0; flex-wrap: wrap; }
+.filters-bar select {
+    padding: 0.45rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.85rem;
+}
+
+/* --- Calendar --- */
+.legend { display: flex; gap: 1.25rem; margin: 0.5rem 0 1rem; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--text-dim); }
+
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+.dot-episode { background: #6c5ce7; }
+.dot-finale, .dot-season-finale { background: #e03131; }
+.dot-new-season { background: #2b8a3e; }
+.dot-new-series { background: #f2b705; }
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+.calendar-header button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.3rem 0.7rem;
+}
+.calendar-header h2 { margin: 0; font-size: 1.1rem; }
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+.cal-weekday { text-align: center; color: var(--text-dim); font-size: 0.75rem; padding-bottom: 0.3rem; }
+.cal-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    min-height: 64px;
+    padding: 0.4rem;
+    cursor: pointer;
+}
+.cal-cell:hover { border-color: var(--accent); }
+.cal-cell.empty { background: transparent; border: none; cursor: default; }
+.cal-cell.today { border-color: var(--accent); border-width: 2px; }
+.cal-day-number { font-size: 0.8rem; color: var(--text-dim); }
+.cal-dots { display: flex; gap: 3px; margin-top: 0.4rem; flex-wrap: wrap; }
+
+.day-detail {
+    margin-top: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+}
+.day-detail h3 { margin-top: 0; }
+
+.badge-episode { background: #6c5ce7; }
+.badge-season-finale { background: #e03131; }
+.badge-new-season { background: #2b8a3e; }
+.badge-new-series { background: #f2b705; color: #111; }
+.row-card .badge { display: inline-block; margin-bottom: 0.2rem; font-size: 0.65rem; }
+
+/* --- Dashboard Recommendations --- */
+.score-badge { background: #f2b705; color: #111; margin-left: 0.5rem; font-size: 0.7rem; }
+.rec-add-btn { margin-top: 0.4rem; font-size: 0.75rem; padding: 0.3rem 0.6rem; background: var(--border); color: var(--text); }
+.rec-add-btn:hover { background: var(--accent); color: white; }
+.row-card { align-items: flex-start; }

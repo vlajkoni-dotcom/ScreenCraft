@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Calendar{% endblock %}
+{% block content %}
+    <h1>Calendar</h1>
+    <div class="legend">
+        <span class="legend-item"><span class="dot dot-episode"></span> Episodes you track</span>
+        <span class="legend-item"><span class="dot dot-finale"></span> Season finales</span>
+        <span class="legend-item"><span class="dot dot-new-season"></span> New seasons</span>
+        <span class="legend-item"><span class="dot dot-new-series"></span> New TV shows</span>
+    </div>
+
+    <div class="calendar-header">
+        <button onclick="changeMonth(-1)">←</button>
+        <h2 id="month-label">Loading...</h2>
+        <button onclick="changeMonth(1)">→</button>
+    </div>
+
+    <div class="calendar-grid" id="calendar-grid"></div>
+
+    <div id="day-detail" class="day-detail" style="display:none">
+        <h3 id="day-detail-title"></h3>
+        <div id="day-detail-list" class="row-list"></div>
+    </div>
+{% endblock %}
+{% block scripts %}
+<script>
+let current = new Date();
+current.setDate(1);
+let eventsByDate = {};
+
+const TYPE_LABELS = {
+    episode: 'Episode',
+    season_finale: 'Season Finale',
+    new_season: 'New Season',
+    new_series: 'New TV Show',
+};
+
+function changeMonth(delta) {
+    current.setMonth(current.getMonth() + delta);
+    load();
+}
+
+async function load() {
+    const year = current.getFullYear();
+    const month = current.getMonth() + 1;
+    document.getElementById('month-label').textContent = current.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    document.getElementById('day-detail').style.display = 'none';
+
+    const res = await fetch(`/api/calendar?year=${year}&month=${month}`);
+    const data = await res.json();
+
+    eventsByDate = {};
+    data.events.forEach(e => {
+        if (!eventsByDate[e.date]) eventsByDate[e.date] = [];
+        eventsByDate[e.date].push(e);
+    });
+
+    renderGrid(year, month);
+}
+
+function renderGrid(year, month) {
+    const grid = document.getElementById('calendar-grid');
+    const firstDay = new Date(year, month - 1, 1);
+    const startWeekday = (firstDay.getDay() + 6) % 7; // ponedeljak = 0
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const todayIso = new Date().toISOString().slice(0, 10);
+
+    let html = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => `<div class="cal-weekday">${d}</div>`).join('');
+
+    for (let i = 0; i < startWeekday; i++) html += `<div class="cal-cell empty"></div>`;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const iso = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const dayEvents = eventsByDate[iso] || [];
+        const types = [...new Set(dayEvents.map(e => e.type))];
+        const isToday = iso === todayIso;
+        html += `
+            <div class="cal-cell ${isToday ? 'today' : ''}" onclick="showDay('${iso}')">
+                <div class="cal-day-number">${day}</div>
+                <div class="cal-dots">${types.map(t => `<span class="dot dot-${t.replace('_','-')}"></span>`).join('')}</div>
+            </div>
+        `;
+    }
+
+    grid.innerHTML = html;
+}
+
+function showDay(iso) {
+    const events = eventsByDate[iso] || [];
+    const panel = document.getElementById('day-detail');
+    const title = document.getElementById('day-detail-title');
+    const list = document.getElementById('day-detail-list');
+
+    title.textContent = formatDate(iso);
+    if (!events.length) {
+        list.innerHTML = '<p class="hint">Nothing scheduled this day.</p>';
+    } else {
+        list.innerHTML = events.map(e => `
+            <div class="row-card" ${e.tmdb_id ? `onclick="goTo('/shows/${e.tmdb_id}')" style="cursor:pointer"` : ''}>
+                <img src="${e.poster_path ? 'https://image.tmdb.org/t/p/w92' + e.poster_path : ''}" alt="">
+                <div>
+                    <span class="badge badge-${e.type.replace('_','-')}">${TYPE_LABELS[e.type] || e.type}</span>
+                    <strong>${e.title}</strong>
+                    <p>${e.subtitle}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+load();
+</script>
+{% endblock %}

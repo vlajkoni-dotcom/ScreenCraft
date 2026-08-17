@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}New TV Shows & Movies{% endblock %}
+{% block content %}
+    <h1>New TV Shows &amp; Movies</h1>
+
+    <section>
+        <h2>New Seasons — TV Shows You Track</h2>
+        <p class="hint">Seasons that started recently or are about to, for shows already in your library.</p>
+        <div id="new-seasons" class="grid"><p class="hint">Loading...</p></div>
+    </section>
+
+    <section>
+        <h2>New Seasons — You Might Like</h2>
+        <p class="hint">New seasons of shows you don't currently track.</p>
+        <div class="filters-bar">
+            <select id="ns-window-filter">
+                <option value="next_30">Next 30 days</option>
+                <option value="next_90">Next 90 days</option>
+                <option value="last_30">Last 30 days</option>
+            </select>
+            <button onclick="loadSeasonSuggestions()">Apply</button>
+        </div>
+        <div id="new-seasons-suggestions" class="card-grid"><p class="hint">Loading...</p></div>
+    </section>
+
+    <section>
+        <h2>Discover New TV Shows</h2>
+        <div class="filters-bar">
+            <select id="window-filter">
+                <option value="next_30">Next 30 days</option>
+                <option value="next_90">Next 90 days</option>
+                <option value="last_7">Last 7 days</option>
+                <option value="last_30">Last 30 days</option>
+                <option value="last_90">Last 90 days</option>
+            </select>
+            <select id="genre-filter"><option value="">All genres</option></select>
+            <select id="provider-filter"><option value="">All platforms</option></select>
+            <button onclick="loadDiscovery()">Apply</button>
+        </div>
+        <div id="discover-series" class="card-grid"><p class="hint">Loading...</p></div>
+    </section>
+
+    <section>
+        <h2>Discover New Movies</h2>
+        <p class="hint">Movies that just arrived on streaming or Blu-ray/DVD — not older catalog additions. Checks the actual release date per movie, so this section loads a bit slower.</p>
+        <div class="filters-bar">
+            <select id="movie-window-filter">
+                <option value="last_30">Last 30 days</option>
+                <option value="last_90">Last 90 days</option>
+                <option value="last_7">Last 7 days</option>
+            </select>
+            <select id="movie-genre-filter"><option value="">All genres</option></select>
+            <button onclick="loadMovies()">Apply</button>
+        </div>
+        <div id="discover-movies" class="card-grid"><p class="hint">Loading...</p></div>
+    </section>
+{% endblock %}
+{% block scripts %}
+<script>
+async function setShowStatus(tmdbId, status, btn) {
+    btn.disabled = true;
+    await fetch(`/api/shows/${tmdbId}/status`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+    });
+    btn.textContent = 'Added: ' + status;
+}
+
+async function setMovieStatus(tmdbId, status, btn) {
+    btn.disabled = true;
+    await fetch(`/api/movies/${tmdbId}/status`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+    });
+    btn.textContent = 'Added: ' + status;
+}
+
+async function loadNewSeasons() {
+    const res = await fetch('/api/discovery/new-seasons');
+    const data = await res.json();
+    const el = document.getElementById('new-seasons');
+    if (!data.length) { el.innerHTML = '<p class="hint">No new seasons detected for your shows right now.</p>'; return; }
+    el.innerHTML = data.map(s => `
+        <div class="poster-card" onclick="goTo('/shows/${s.tmdb_id}')">
+            <img src="${s.poster_path ? 'https://image.tmdb.org/t/p/w185' + s.poster_path : ''}" alt="">
+            <div class="poster-card-body">
+                <h3>${s.title}</h3>
+                <p>Season ${s.season_number}</p>
+                <p class="hint">${s.is_upcoming ? 'Starts' : 'Started'} ${formatDate(s.air_date)}</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadSeasonSuggestions() {
+    const window = document.getElementById('ns-window-filter').value;
+    const el = document.getElementById('new-seasons-suggestions');
+    el.innerHTML = '<p class="hint">Loading...</p>';
+    const res = await fetch(`/api/discovery/new-seasons/suggestions?window=${window}`);
+    if (!res.ok) { el.innerHTML = '<p class="hint">Could not reach TMDB right now.</p>'; return; }
+    const data = await res.json();
+    if (!data.length) { el.innerHTML = '<p class="hint">No suggestions for this window.</p>'; return; }
+    el.innerHTML = data.map(s => `
+        <div class="card">
+            <img src="${s.poster_path ? 'https://image.tmdb.org/t/p/w154' + s.poster_path : ''}" alt="">
+            <div class="card-body">
+                <h3><a href="/shows/${s.tmdb_id}">${s.title}</a> ${s.year ? `(${s.year})` : ''}</h3>
+                <p>${s.overview ? s.overview.slice(0, 140) + '...' : 'No description.'}</p>
+                <div class="btn-row">
+                    <button onclick="setShowStatus(${s.tmdb_id}, 'watching', this)">Watching</button>
+                    <button onclick="setShowStatus(${s.tmdb_id}, 'watchlist', this)">Watchlist</button>
+                    <button onclick="setShowStatus(${s.tmdb_id}, 'not_interested', this)">Not interested</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadFilters() {
+    const res = await fetch('/api/discovery/filters');
+    if (!res.ok) return;
+    const data = await res.json();
+    const genreEl = document.getElementById('genre-filter');
+    data.tv_genres.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.id; opt.textContent = g.name;
+        genreEl.appendChild(opt);
+    });
+    const movieGenreEl = document.getElementById('movie-genre-filter');
+    data.movie_genres.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.id; opt.textContent = g.name;
+        movieGenreEl.appendChild(opt);
+    });
+    const providerEl = document.getElementById('provider-filter');
+    data.providers.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id; opt.textContent = p.name;
+        providerEl.appendChild(opt);
+    });
+}
+
+async function loadDiscovery() {
+    const window = document.getElementById('window-filter').value;
+    const genre = document.getElementById('genre-filter').value;
+    const provider = document.getElementById('provider-filter').value;
+
+    const params = new URLSearchParams({ window });
+    if (genre) params.set('genre_id', genre);
+    if (provider) params.set('provider_id', provider);
+
+    const el = document.getElementById('discover-series');
+    el.innerHTML = '<p class="hint">Loading...</p>';
+    const res = await fetch(`/api/discovery/new-series?${params}`);
+    if (!res.ok) { el.innerHTML = '<p class="hint">Could not reach TMDB right now. Try again in a moment.</p>'; return; }
+    const data = await res.json();
+
+    if (!data.length) { el.innerHTML = '<p class="hint">No results for these filters.</p>'; return; }
+    el.innerHTML = data.map(s => `
+        <div class="card">
+            <img src="${s.poster_path ? 'https://image.tmdb.org/t/p/w154' + s.poster_path : ''}" alt="">
+            <div class="card-body">
+                <h3><a href="/shows/${s.tmdb_id}">${s.title}</a> ${s.year ? `(${s.year})` : ''}</h3>
+                <p>${s.overview ? s.overview.slice(0, 140) + '...' : 'No description.'}</p>
+                <div class="btn-row">
+                    <button onclick="setShowStatus(${s.tmdb_id}, 'watching', this)">Watching</button>
+                    <button onclick="setShowStatus(${s.tmdb_id}, 'watchlist', this)">Watchlist</button>
+                    <button onclick="setShowStatus(${s.tmdb_id}, 'not_interested', this)">Not interested</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadMovies() {
+    const window = document.getElementById('movie-window-filter').value;
+    const genre = document.getElementById('movie-genre-filter').value;
+
+    const params = new URLSearchParams({ window });
+    if (genre) params.set('genre_id', genre);
+
+    const el = document.getElementById('discover-movies');
+    el.innerHTML = '<p class="hint">Loading...</p>';
+    const res = await fetch(`/api/discovery/new-movies?${params}`);
+    if (!res.ok) { el.innerHTML = '<p class="hint">Could not reach TMDB right now. Try again in a moment.</p>'; return; }
+    const data = await res.json();
+
+    if (!data.length) { el.innerHTML = '<p class="hint">No results for these filters.</p>'; return; }
+    el.innerHTML = data.map(m => `
+        <div class="card">
+            <img src="${m.poster_path ? 'https://image.tmdb.org/t/p/w154' + m.poster_path : ''}" alt="">
+            <div class="card-body">
+                <span class="badge">MOVIE</span>
+                <h3>${m.title} ${m.year ? `(${m.year})` : ''}</h3>
+                <p>${m.overview ? m.overview.slice(0, 140) + '...' : 'No description.'}</p>
+                <p class="hint">Released: ${formatDate(m.release_date)}</p>
+                <div class="btn-row">
+                    <button onclick="setMovieStatus(${m.tmdb_id}, 'watchlist', this)">Watchlist</button>
+                    <button onclick="setMovieStatus(${m.tmdb_id}, 'watched', this)">Watched</button>
+                    <button onclick="setMovieStatus(${m.tmdb_id}, 'not_interested', this)">Not interested</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+loadNewSeasons();
+loadSeasonSuggestions();
+loadFilters();
+loadDiscovery();
+loadMovies();
+</script>
+{% endblock %}

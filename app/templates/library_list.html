@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+    <h1>{{ page_title }}</h1>
+    <div id="lib-list" class="grid"><p class="hint">Loading...</p></div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function load() {
+    const res = await fetch('/api/library/status/{{ status }}');
+    const data = await res.json();
+    const el = document.getElementById('lib-list');
+    if (!data.length) {
+        el.innerHTML = '<p class="hint">Nothing here yet.</p>';
+        return;
+    }
+    el.innerHTML = data.map(s => `
+        <div class="poster-card">
+            <img src="${s.poster_path ? 'https://image.tmdb.org/t/p/w185' + s.poster_path : ''}" alt="">
+            <div class="poster-card-body">
+                <span class="badge">${s.content_type === 'show' ? 'TV SHOW' : 'MOVIE'}</span>
+                <h3>${s.title}${s.year ? ' (' + s.year + ')' : ''}</h3>
+                ${s.personal_rating ? `<p>Your rating: ${s.personal_rating}/10</p>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+load();
+</script>
+{% endblock %}
