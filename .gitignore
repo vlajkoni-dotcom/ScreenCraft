@@ -1,0 +1,20 @@
+# Environment / secrets - NIKAD ne commit-ovati .env (sadrži tvoj TMDB API ključ)
+.env
+
+# Baza podataka (lokalni podaci svakog korisnika)
+data/
+*.db
+*.sqlite3
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+*.egg-info/
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
